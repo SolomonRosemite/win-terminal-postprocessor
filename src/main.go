@@ -48,6 +48,8 @@ func main() {
 					log.Println("skipping")
 				} else {
 					lastWrite = time.Now()
+
+					time.Sleep(1 * time.Second)
 					blur(path)
 				}
 			case err, ok := <-watcher.Errors:
@@ -78,6 +80,7 @@ func blur(path string) {
 	var blurEnabled bool
 	var blurRadius uint32
 	var backgroundImage string
+	var currentBlurBackgroundImage string
 
 	lines := strings.Split(file, "\n")
 	for _, line := range lines {
@@ -88,13 +91,18 @@ func blur(path string) {
 			must(err)
 			blurRadius = parsedRadius
 		} else if strings.HasPrefix(strings.TrimSpace(line), "\"backgroundImage\"") {
-			backgroundImage = parseBackgroundImage(line)
+			if strings.Contains(line, "blurred-") {
+				currentBlurBackgroundImage = parseBackgroundImage(line)
+			} else {
+				backgroundImage = parseBackgroundImage(line)
+			}
 		}
 	}
 
 	log.Println("blurEnabled", blurEnabled)
 	log.Println("blurRadius", blurRadius)
 	log.Println("backgroundImage", backgroundImage)
+	log.Println("currentBlurBackgroundImage", currentBlurBackgroundImage)
 
 	if !blurEnabled {
 		log.Println(len(lines))
@@ -160,7 +168,7 @@ func blur(path string) {
 
 	content := []string{}
 	for _, line := range lines {
-		if strings.Contains(line, realFileName) {
+		if strings.Contains(line, realFileName) && !strings.Contains(line, "blurred-") {
 			str := strings.ReplaceAll(os.TempDir(), "\\", "/")
 			space := strings.Repeat(" ", strings.Index(line, "\""))
 
@@ -171,6 +179,9 @@ func blur(path string) {
 			continue
 		}
 
+		if currentBlurBackgroundImage != "" && strings.Contains(line, currentBlurBackgroundImage) {
+			continue
+		}
 		content = append(content, line)
 	}
 
