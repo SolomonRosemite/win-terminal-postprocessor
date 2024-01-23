@@ -14,7 +14,7 @@ jobs:
       - name: Install dependencies
         run: cd src && go get .
       - name: Build
-        run: cd src && go build 
+        run: cd src && GOOS=windows GOARCH=amd64 go build 
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts
